@@ -1,13 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 
-interface UseSpeechRecognitionProps {
-  language: string;
-  onResult: (transcript: string) => void;
-}
-
-export function useSpeechRecognition({ language, onResult }: UseSpeechRecognitionProps) {
+export function useSpeechRecognition() {
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [transcript, setTranscript] = useState('');
 
   const startListening = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
@@ -18,39 +13,40 @@ export function useSpeechRecognition({ language, onResult }: UseSpeechRecognitio
     const recognition = new webkitSpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = language;
+    recognition.lang = 'pt-BR';
 
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0])
-        .map(result => result.transcript)
-        .join('');
-
-      onResult(transcript);
+    recognition.onstart = () => {
+      setIsListening(true);
     };
 
-    recognition.onerror = (event) => {
-      console.error('Erro no reconhecimento de voz:', event.error);
-      stopListening();
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const result = event.results[event.results.length - 1];
+      const transcript = result[0].transcript;
+      setTranscript(transcript);
+    };
+
+    recognition.onerror = (event: Event) => {
+      console.error('Erro no reconhecimento de voz:', event);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
     };
 
     recognition.start();
-    recognitionRef.current = recognition;
-    setIsListening(true);
-  }, [language, onResult]);
+  }, []);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
     setIsListening(false);
+    window.speechSynthesis?.cancel();
   }, []);
 
   return {
     isListening,
+    transcript,
     startListening,
-    stopListening
+    stopListening,
   };
 }
 
@@ -58,5 +54,6 @@ export function useSpeechRecognition({ language, onResult }: UseSpeechRecognitio
 declare global {
   interface Window {
     webkitSpeechRecognition: any;
+    speechSynthesis: any;
   }
 }

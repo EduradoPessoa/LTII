@@ -1,167 +1,104 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, db, type User } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
-import bcrypt from 'bcryptjs';
+import { createContext, useCallback, useEffect, useState } from 'react';
+import { User } from '../types/auth';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  createProfile: (name: string, email: string, password: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // Verificar sessão atual
+    // Verifica se há uma sessão ativa
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadUser(session.user.id);
-      } else {
-        setLoading(false);
+      if (session) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          is_admin: session.user.user_metadata.is_admin || false,
+          is_owner: session.user.user_metadata.is_owner || false,
+          created_at: session.user.created_at,
+          updated_at: session.user.last_sign_in_at || session.user.created_at,
+        });
       }
+      setLoading(false);
     });
 
-    // Escutar mudanças na autenticação
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        loadUser(session.user.id);
+    // Escuta mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          is_admin: session.user.user_metadata.is_admin || false,
+          is_owner: session.user.user_metadata.is_owner || false,
+          created_at: session.user.created_at,
+          updated_at: session.user.last_sign_in_at || session.user.created_at,
+        });
       } else {
         setUser(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const loadUser = async (userId: string) => {
-    try {
-      const userData = await db.users.getWithRelations(userId);
-      setUser(userData);
-    } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      
-      // Buscar usuário pelo email
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      if (userError || !userData) {
-        throw new Error('Email ou senha inválidos');
-      }
-
-      // Verificar senha
-      const passwordMatch = await bcrypt.compare(password, userData.encrypted_password);
-      if (!passwordMatch) {
-        throw new Error('Email ou senha inválidos');
-      }
-
-      // Fazer login no Supabase
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInError) throw signInError;
-
-      // Carregar dados completos do usuário
-      await loadUser(userData.id);
-      navigate('/admin/dashboard');
-    } catch (error) {
-      console.error('Erro no login:', error);
+    if (error) {
       throw error;
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      await supabase.auth.signOut();
-      setUser(null);
-      navigate('/login');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createProfile = async (name: string, email: string, password: string) => {
-    if (!user) throw new Error('Usuário não autenticado');
-
-    try {
-      setLoading(true);
-
-      // Verificar limite de perfis
-      if (user.subscription?.max_profiles && user.profiles?.length >= user.subscription.max_profiles) {
-        throw new Error('Limite de perfis atingido para sua assinatura');
-      }
-
-      // Hash da senha
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Criar perfil
-      const newProfile = await db.profiles.create(user.id, name, email);
-
-      // Atualizar estado local
-      setUser(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          profiles: [...(prev.profiles || []), newProfile],
-        };
+    if (data.user) {
+      setUser({
+        id: data.user.id,
+        email: data.user.email!,
+        is_admin: data.user.user_metadata.is_admin || false,
+        is_owner: data.user.user_metadata.is_owner || false,
+        created_at: data.user.created_at,
+        updated_at: data.user.last_sign_in_at || data.user.created_at,
       });
-
-      // Enviar email de boas-vindas
-      await fetch(`${import.meta.env.VITE_API_URL}/api/email/welcome`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-    } catch (error) {
-      console.error('Erro ao criar perfil:', error);
-      throw error;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
-  const value = {
-    user,
-    loading,
-    signIn,
-    signOut,
-    createProfile,
-  };
+  const signOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
+    setUser(null);
+  }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signIn,
+        signOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = AuthContext;
   if (context === undefined) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
