@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { ChartBarIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import PrivateRoute from './PrivateRoute';
+
+interface LayoutProps {
+  children: ReactNode;
+}
 
 // Links de navegação comuns para admin e usuários
 const commonNavigation = [
@@ -21,7 +25,7 @@ const userNavigation = [
   ...commonNavigation
 ];
 
-export default function Layout() {
+export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, activeProfile, logout } = useAuth();
 
@@ -35,7 +39,7 @@ export default function Layout() {
 
   return (
     <PrivateRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-100">
         {/* Sidebar para desktop */}
         <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
           <div className="flex flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-white pt-5 pb-4">
@@ -94,7 +98,7 @@ export default function Layout() {
         {/* Conteúdo principal */}
         <div className="lg:pl-64">
           <main className="flex-1">
-            <Outlet />
+            {children}
           </main>
         </div>
       </div>

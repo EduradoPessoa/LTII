@@ -1,37 +1,46 @@
 export interface Profile {
   id: string;
+  user_id: string;
   name: string;
   email: string;
-  isActive: boolean;
-  createdAt: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Subscription {
   id: string;
+  user_id: string;
   plan: 'basic' | 'premium' | 'enterprise';
   status: 'active' | 'inactive' | 'cancelled';
-  startDate: number;
-  endDate: number;
-  maxProfiles: number;
+  start_date: string;
+  end_date: string | null;
+  max_profiles: number;
   price: number;
-  autoRenew: boolean;
-  lastPayment?: {
-    date: number;
-    amount: number;
-    status: 'success' | 'failed' | 'pending';
-  };
+  auto_renew: boolean;
+  created_at: string;
+  updated_at: string;
+  payments?: Payment[];
+}
+
+export interface Payment {
+  id: string;
+  subscription_id: string;
+  amount: number;
+  status: 'success' | 'failed' | 'pending';
+  payment_date: string;
+  created_at: string;
 }
 
 export interface User {
   id: string;
   email: string;
-  password: string; // Será armazenado com hash
-  isAdmin: boolean;
-  profiles: Profile[];
+  is_admin: boolean;
+  is_owner: boolean;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile[];
   subscription?: Subscription;
-  isOwner: boolean; // indica se é o dono da conta (pagante)
-  createdAt: number;
-  updatedAt: number;
 }
 
 export interface LoginCredentials {

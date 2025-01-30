@@ -1,34 +1,25 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { ReactNode } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-export default function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, activeProfile, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+interface PrivateRouteProps {
+  children: ReactNode;
+  requireAdmin?: boolean;
+}
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!user || !activeProfile) {
-        // Redireciona para login se não estiver autenticado
-        navigate('/login', { state: { from: location } });
-      } else if (!user.isAdmin && location.pathname.startsWith('/admin')) {
-        // Redireciona usuário comum para o dashboard se tentar acessar rota admin
-        navigate('/dashboard');
-      }
-    }
-  }, [user, activeProfile, isLoading, navigate, location]);
+export function PrivateRoute({ children, requireAdmin = false }: PrivateRouteProps) {
+  const { user, loading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+  if (loading) {
+    return <div>Carregando...</div>;
   }
 
-  if (!user || !activeProfile) {
-    return null;
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (requireAdmin && !user.is_admin) {
+    return <Navigate to="/dashboard" />;
   }
 
   return <>{children}</>;
