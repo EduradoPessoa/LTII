@@ -1,18 +1,13 @@
-import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 interface PrivateRouteProps {
-  children: ReactNode;
+  children: React.ReactNode;
   requireAdmin?: boolean;
 }
 
 export function PrivateRoute({ children, requireAdmin = false }: PrivateRouteProps) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <div>Carregando...</div>;
-  }
+  const { user } = useAuth();
 
   if (!user) {
     return <Navigate to="/login" />;

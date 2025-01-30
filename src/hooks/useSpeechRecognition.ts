@@ -39,7 +39,6 @@ export function useSpeechRecognition() {
 
   const stopListening = useCallback(() => {
     setIsListening(false);
-    window.speechSynthesis?.cancel();
   }, []);
 
   return {
@@ -50,10 +49,10 @@ export function useSpeechRecognition() {
   };
 }
 
-// Adiciona o tipo para o webkitSpeechRecognition
 declare global {
   interface Window {
-    webkitSpeechRecognition: any;
-    speechSynthesis: any;
+    webkitSpeechRecognition: {
+      new(): SpeechRecognition;
+    };
   }
 }

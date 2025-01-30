@@ -41,71 +41,74 @@ export interface Database {
       profiles: {
         Row: {
           id: string
+          created_at: string
+          updated_at: string
           user_id: string
           name: string
           email: string
           is_active: boolean
-          created_at: string
-          updated_at: string
+          is_admin: boolean
         }
         Insert: {
           id?: string
+          created_at?: string
+          updated_at?: string
           user_id: string
           name: string
           email: string
           is_active?: boolean
-          created_at?: string
-          updated_at?: string
+          is_admin?: boolean
         }
         Update: {
           id?: string
+          created_at?: string
+          updated_at?: string
           user_id?: string
           name?: string
           email?: string
           is_active?: boolean
-          created_at?: string
-          updated_at?: string
+          is_admin?: boolean
         }
       }
       subscriptions: {
         Row: {
           id: string
+          created_at: string
+          updated_at: string
           user_id: string
-          plan: 'basic' | 'premium' | 'enterprise'
-          status: 'active' | 'inactive' | 'cancelled'
+          plan: string
+          status: string
           start_date: string
-          end_date: string | null
+          end_date: string
           max_profiles: number
           price: number
           auto_renew: boolean
-          created_at: string
-          updated_at: string
         }
         Insert: {
           id?: string
+          created_at?: string
+          updated_at?: string
           user_id: string
-          plan: 'basic' | 'premium' | 'enterprise'
-          status: 'active' | 'inactive' | 'cancelled'
+          plan: string
+          status?: string
           start_date: string
-          end_date?: string | null
+          end_date: string
           max_profiles: number
           price: number
           auto_renew?: boolean
-          created_at?: string
-          updated_at?: string
         }
         Update: {
           id?: string
+          created_at?: string
+          updated_at?: string
           user_id?: string
-          plan?: 'basic' | 'premium' | 'enterprise'
-          status?: 'active' | 'inactive' | 'cancelled'
+          plan?: string
+          status?: string
           start_date?: string
-          end_date?: string | null
+          end_date?: string
           max_profiles?: number
           price?: number
           auto_renew?: boolean
-          created_at?: string
-          updated_at?: string
         }
       }
       payments: {

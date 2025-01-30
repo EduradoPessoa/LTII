@@ -1,93 +1,95 @@
-import { createContext, useCallback, useEffect, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import { User } from '../types/auth';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verifica se há uma sessão ativa
+    // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          is_admin: session.user.user_metadata.is_admin || false,
-          is_owner: session.user.user_metadata.is_owner || false,
-          created_at: session.user.created_at,
-          updated_at: session.user.last_sign_in_at || session.user.created_at,
-        });
+        getUserData(session.user.id);
       }
-      setLoading(false);
     });
 
-    // Escuta mudanças na autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for changes on auth state (sign in, sign out, etc.)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          is_admin: session.user.user_metadata.is_admin || false,
-          is_owner: session.user.user_metadata.is_owner || false,
-          created_at: session.user.created_at,
-          updated_at: session.user.last_sign_in_at || session.user.created_at,
-        });
+        getUserData(session.user.id);
       } else {
         setUser(null);
       }
-      setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+  async function getUserData(userId: string) {
+    try {
+      // Fetch user profile
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (profileError) throw profileError;
+
+      // Fetch user subscription
+      const { data: subscriptions, error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+        throw subscriptionError;
+      }
+
+      const mainProfile = profiles.find(profile => profile.is_admin) || profiles[0];
+
+      setUser({
+        id: userId,
+        email: mainProfile.email,
+        is_admin: mainProfile.is_admin,
+        profiles: profiles,
+        subscription: subscriptions || undefined,
+      });
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      setUser(null);
+    }
+  }
+
+  async function signIn(email: string, password: string) {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+  }
 
-    if (data.user) {
-      setUser({
-        id: data.user.id,
-        email: data.user.email!,
-        is_admin: data.user.user_metadata.is_admin || false,
-        is_owner: data.user.user_metadata.is_owner || false,
-        created_at: data.user.created_at,
-        updated_at: data.user.last_sign_in_at || data.user.created_at,
-      });
-    }
-  }, []);
-
-  const signOut = useCallback(async () => {
+  async function signOut() {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     setUser(null);
-  }, []);
+  }
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        loading,
         signIn,
         signOut,
       }}

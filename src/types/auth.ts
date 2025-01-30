@@ -1,45 +1,13 @@
-export interface Profile {
-  id: string;
-  user_id: string;
-  name: string;
-  email: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { Database } from '../lib/database.types';
 
-export interface Subscription {
-  id: string;
-  user_id: string;
-  plan: 'basic' | 'premium' | 'enterprise';
-  status: 'active' | 'inactive' | 'cancelled';
-  start_date: string;
-  end_date: string | null;
-  max_profiles: number;
-  price: number;
-  auto_renew: boolean;
-  created_at: string;
-  updated_at: string;
-  payments?: Payment[];
-}
-
-export interface Payment {
-  id: string;
-  subscription_id: string;
-  amount: number;
-  status: 'success' | 'failed' | 'pending';
-  payment_date: string;
-  created_at: string;
-}
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
 
 export interface User {
   id: string;
   email: string;
   is_admin: boolean;
-  is_owner: boolean;
-  created_at: string;
-  updated_at: string;
-  profiles?: Profile[];
+  profiles: Profile[];
   subscription?: Subscription;
 }
 
