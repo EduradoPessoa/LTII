@@ -11,12 +11,9 @@ export interface Topic {
 }
 
 export interface Message {
-  id: string;
   role: 'user' | 'assistant';
   content: string;
-  originalContent?: string; // Conteúdo original antes da tradução
-  timestamp: number;
-  audioUrl?: string;
+  timestamp: string;
 }
 
 export interface ConversationSettings {
