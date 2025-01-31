@@ -1,32 +1,34 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export function useSpeechRecognition() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
 
+  useEffect(() => {
+    if (!('webkitSpeechRecognition' in window)) {
+      console.error('Speech recognition is not supported in this browser.');
+      return;
+    }
+  }, []);
+
   const startListening = useCallback(() => {
     if (!('webkitSpeechRecognition' in window)) {
-      alert('Seu navegador não suporta reconhecimento de voz.');
+      console.error('Speech recognition is not supported in this browser.');
       return;
     }
 
-    const recognition = new webkitSpeechRecognition();
+    const recognition = new (window as any).webkitSpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'pt-BR';
 
-    recognition.onstart = () => {
-      setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const last = event.results.length - 1;
+      const text = event.results[last][0].transcript;
+      setTranscript(text);
     };
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const result = event.results[event.results.length - 1];
-      const transcript = result[0].transcript;
-      setTranscript(transcript);
-    };
-
-    recognition.onerror = (event: Event) => {
-      console.error('Erro no reconhecimento de voz:', event);
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
       setIsListening(false);
     };
 
@@ -34,10 +36,19 @@ export function useSpeechRecognition() {
       setIsListening(false);
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+    }
   }, []);
 
   const stopListening = useCallback(() => {
+    if (!('webkitSpeechRecognition' in window)) return;
+
+    const recognition = new (window as any).webkitSpeechRecognition();
+    recognition.stop();
     setIsListening(false);
   }, []);
 

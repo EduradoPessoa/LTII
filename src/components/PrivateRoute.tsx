@@ -6,7 +6,7 @@ interface PrivateRouteProps {
   requireAdmin?: boolean;
 }
 
-export function PrivateRoute({ children, requireAdmin = false }: PrivateRouteProps) {
+export default function PrivateRoute({ children, requireAdmin = false }: PrivateRouteProps) {
   const { user } = useAuth();
 
   if (!user) {

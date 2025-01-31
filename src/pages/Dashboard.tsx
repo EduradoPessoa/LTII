@@ -12,73 +12,77 @@ import {
   StatNumber,
   StatHelpText,
   StatArrow,
-  CircularProgress,
-  CircularProgressLabel,
-  Badge,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
 } from '@chakra-ui/react';
-import { 
-  FaGraduationCap, 
-  FaClock, 
-  FaComments, 
-  FaStar,
-  FaChartLine,
-  FaLanguage,
-} from 'react-icons/fa';
 import { useAuth } from '../hooks/useAuth';
-
-// Mock data for learning metrics
-const learningMetrics = {
-  totalMinutes: 480,
-  totalSessions: 24,
-  averageScore: 85,
-  lastWeekMinutes: 120,
-  previousWeekMinutes: 90,
-  languageProgress: {
-    english: 75,
-    spanish: 45,
-    french: 30,
-  },
-  recentSessions: [
-    { id: 1, date: '2025-01-30', duration: 30, language: 'English', score: 88, topics: ['Daily Routine', 'Travel'] },
-    { id: 2, date: '2025-01-29', duration: 25, language: 'Spanish', score: 82, topics: ['Food', 'Culture'] },
-    { id: 3, date: '2025-01-28', duration: 35, language: 'English', score: 90, topics: ['Business', 'Technology'] },
-  ],
-  skillProgress: {
-    speaking: 70,
-    listening: 85,
-    vocabulary: 65,
-    grammar: 80,
-  },
-};
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [metrics] = useState({
+    totalSessions: 120,
+    averageScore: 85,
+    learningStreak: 7,
+    wordsLearned: 450,
+  });
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="py-4">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 p-4">
-            <div className="text-center">
-              <h2 className="text-lg font-medium text-gray-900">
-                Bem-vindo, {user?.email}!
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Este é o seu dashboard personalizado.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Box p={5}>
+      <VStack spacing={6} align="stretch">
+        <Text fontSize="2xl" fontWeight="bold">
+          Welcome back, {user?.email}!
+        </Text>
+
+        <Grid templateColumns="repeat(4, 1fr)" gap={4}>
+          <GridItem>
+            <Stat>
+              <StatLabel>Total Sessions</StatLabel>
+              <StatNumber>{metrics.totalSessions}</StatNumber>
+              <StatHelpText>
+                <StatArrow type="increase" />
+                23%
+              </StatHelpText>
+            </Stat>
+          </GridItem>
+
+          <GridItem>
+            <Stat>
+              <StatLabel>Average Score</StatLabel>
+              <StatNumber>{metrics.averageScore}%</StatNumber>
+              <StatHelpText>
+                <StatArrow type="increase" />
+                5%
+              </StatHelpText>
+            </Stat>
+          </GridItem>
+
+          <GridItem>
+            <Stat>
+              <StatLabel>Learning Streak</StatLabel>
+              <StatNumber>{metrics.learningStreak} days</StatNumber>
+              <StatHelpText>Keep it up!</StatHelpText>
+            </Stat>
+          </GridItem>
+
+          <GridItem>
+            <Stat>
+              <StatLabel>Words Learned</StatLabel>
+              <StatNumber>{metrics.wordsLearned}</StatNumber>
+              <StatHelpText>
+                <StatArrow type="increase" />
+                12 new this week
+              </StatHelpText>
+            </Stat>
+          </GridItem>
+        </Grid>
+
+        <Box>
+          <Text mb={2}>Progress to Next Level</Text>
+          <Progress value={80} size="lg" colorScheme="green" />
+        </Box>
+
+        <HStack spacing={4} justify="center">
+          {/* Add action buttons or additional features here */}
+        </HStack>
+      </VStack>
+    </Box>
   );
 }

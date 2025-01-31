@@ -1,6 +1,8 @@
+export const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+
 export const config = {
   openai: {
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    apiKey: OPENAI_API_KEY,
   },
   app: {
     name: 'LTII',

@@ -67,14 +67,16 @@ export default function Conversation() {
     scrollToBottom();
   }, [messages]);
 
-  const onTranscriptResult = useCallback((transcript: string) => {
-    setCurrentTranscript(transcript);
-  }, []);
-
-  const { isListening, startListening, stopListening } = useSpeechRecognition({
+  const { transcript, isListening, startListening, stopListening } = useSpeechRecognition({
     language: settings.autoTranslate ? 'pt-BR' : settings.language.code,
-    onResult: onTranscriptResult,
+    onResult: setCurrentTranscript,
   });
+
+  useEffect(() => {
+    if (transcript) {
+      setCurrentTranscript(transcript);
+    }
+  }, [transcript]);
 
   useEffect(() => {
     if (isListening) {
