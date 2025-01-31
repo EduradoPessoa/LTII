@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './database.types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Valores padrão para desenvolvimento local
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Faltam variáveis de ambiente do Supabase. Verifique .env');
-}
+console.log('Supabase URL:', SUPABASE_URL);
+console.log('Supabase Anon Key:', SUPABASE_ANON_KEY);
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -65,61 +65,58 @@ export interface Payment {
 export const db = {
   users: {
     // Buscar usuário com perfis e assinatura
-    getWithRelations: async (userId: string) => {
-      const { data, error } = await supabase
+    async getWithRelations(userId: string) {
+      const { data: user, error } = await supabase
         .from('users')
-        .select(`
-          *,
-          profiles (*),
-          subscription:subscriptions (
-            *,
-            payments (*)
-          )
-        `)
+        .select('*, profiles (*), subscription:subscriptions (*)')
         .eq('id', userId)
         .single();
 
       if (error) throw error;
-      return data as User & { profiles: Profile[]; subscription: Subscription & { payments: Payment[] } };
+      return user;
     },
 
     // Criar novo usuário
-    create: async (email: string, hashedPassword: string, isAdmin = false) => {
-      const { data, error } = await supabase
+    async create(email: string, hashedPassword: string, isAdmin = false) {
+      const { data: user, error } = await supabase
         .from('users')
-        .insert({
-          email,
-          encrypted_password: hashedPassword,
-          is_admin: isAdmin,
-        })
+        .insert([
+          {
+            email,
+            encrypted_password: hashedPassword,
+            is_admin: isAdmin,
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return user;
     },
   },
 
   profiles: {
     // Criar novo perfil
-    create: async (userId: string, name: string, email: string) => {
-      const { data, error } = await supabase
+    async create(userId: string, name: string, email: string) {
+      const { data: profile, error } = await supabase
         .from('profiles')
-        .insert({
-          user_id: userId,
-          name,
-          email,
-        })
+        .insert([
+          {
+            user_id: userId,
+            name,
+            email,
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return profile;
     },
 
     // Atualizar status do perfil
-    updateStatus: async (profileId: string, isActive: boolean) => {
-      const { data, error } = await supabase
+    async updateStatus(profileId: string, isActive: boolean) {
+      const { data: profile, error } = await supabase
         .from('profiles')
         .update({ is_active: isActive })
         .eq('id', profileId)
@@ -127,16 +124,16 @@ export const db = {
         .single();
 
       if (error) throw error;
-      return data;
+      return profile;
     },
   },
 
   subscriptions: {
     // Criar nova assinatura
-    create: async (subscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>) => {
+    async create(subscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>) {
       const { data, error } = await supabase
         .from('subscriptions')
-        .insert(subscription)
+        .insert([subscription])
         .select()
         .single();
 
@@ -145,7 +142,7 @@ export const db = {
     },
 
     // Atualizar status da assinatura
-    updateStatus: async (subscriptionId: string, status: Subscription['status']) => {
+    async updateStatus(subscriptionId: string, status: Subscription['status']) {
       const { data, error } = await supabase
         .from('subscriptions')
         .update({ status })
