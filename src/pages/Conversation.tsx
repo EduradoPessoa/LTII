@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FaMicrophone, FaMicrophoneSlash, FaLanguage, FaBan } from 'react-icons/fa';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { generateResponse, generateSpeech, translateText } from '../services/conversation';
@@ -59,9 +59,9 @@ export default function Conversation() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
