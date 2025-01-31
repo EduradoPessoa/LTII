@@ -12,7 +12,6 @@ export default defineConfig({
     port: 3000,
   },
   define: {
-    // Garante que o Vite substitua corretamente as variáveis de ambiente
-    'process.env': process.env
+    'import.meta.env.VITE_OPENAI_API_KEY': JSON.stringify(process.env.VITE_OPENAI_API_KEY)
   }
 })
